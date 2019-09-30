@@ -14,12 +14,13 @@ public:
     gsl::Vector3D inputVector{};
 private:
     float radius = 1.f;
+    float speed = 0.0001f;
     gsl::Vector3D Velocity{};
     gsl::Vector3D Acceleration{};
-    gsl::Vector3D Gravity{0,-0.1,0};
+    gsl::Vector3D Gravity{0,-9.81f,0};
 
     gsl::Vector3D LastLocation{};
-
+    bool isFirstCollision = true;
     gsl::Vector3D CurrentTriangleNormal{};
 };
 

@@ -7,16 +7,15 @@ RollingBall::RollingBall() : Sphere(3)
 
 void RollingBall::move(VisualObject* plane)
 {
-    Acceleration = (Gravity);
+
     CalculateBarycentricCoordinates(plane);
     if(inputVector.length() >= 1)
     {
         inputVector.normalize();
-        Acceleration+=inputVector*0.01;
+        //Acceleration+=inputVector;
     }
     else
-        Velocity=gsl::Vector3D(0);
-    Velocity+=Acceleration;
+    //Velocity=gsl::Vector3D(0);
     //Velocity = gsl::Vector3D(0,0,0);
     mMatrix.translate(Velocity);
 }
@@ -41,28 +40,43 @@ bool RollingBall::CalculateBarycentricCoordinates(VisualObject* plane)
         {
             isInTriangle = true;
 
-            auto normal = gsl::Vector3D::cross(pos3 - pos1, pos2 - pos1);
+            auto normal = gsl::Vector3D::cross(pos3 - pos1,pos2 - pos1);
             normal.normalize();
             CurrentTriangleNormal = normal;
 
             gsl::Vector3D playerTempPos = (pos1*bar.x + pos2*bar.y + pos3*bar.z); //1 = radius
             gsl::Vector3D  vectorToBall =  (mMatrix.getPosition()-playerTempPos);
             float distanceToBall = gsl::Vector3D::dot(vectorToBall,CurrentTriangleNormal);
+            gsl::Vector3D N;
+            //the formula is actually N = |G| * n * cos a
+            //by taking dot(-G*n), we save time and get |G|* cos a in one swoop.
+            //As gravity will always be the exact opposite direction of the xz-plane's normal vector,
+            //this shouldnt be a problem
+            N = CurrentTriangleNormal* gsl::Vector3D::dot(-Gravity, CurrentTriangleNormal);
             if(distanceToBall <= radius)
             {
-                qDebug() << "Player collided with triangle";
-                Acceleration= gsl::Vector3D(0);
-                Velocity= gsl::Vector3D(0);
+
+                if(isFirstCollision)
+                {
+                    qDebug() << "Player collided with triangle";
+
+                    Velocity = (Gravity+N).normalized() * gsl::Vector3D::dot(Velocity, (Gravity+N).normalized());
+                    Acceleration = gsl::Vector3D(0);
+                    isFirstCollision = false;
+                }
+                //Velocity= gsl::Vector3D(0);
+                Acceleration = N+Gravity;
             }
             else
             {
                 qDebug() << "No Collision";
+                Acceleration = (Gravity);
             }
-
+            Velocity+=Acceleration*speed;
             //LastLocation = gsl::Vector3D(mMatrix.getPosition().x,playerTempPos,mMatrix.getPosition().z);
 
 
-            qDebug() << CurrentTriangleNormal << mMatrix.getPosition() << Acceleration << Velocity;
+            qDebug() << Acceleration << Velocity.normalized() << (Gravity+N).normalized() << CurrentTriangleNormal << gsl::Vector3D::dot(Gravity, CurrentTriangleNormal);
         }
     }
     //mMatrix.setPosition(LastLocation);
