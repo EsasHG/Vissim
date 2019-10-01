@@ -115,7 +115,7 @@ void RenderWindow::init()
 
     mPlayer = new RollingBall();
     mPlayer->init();
-    mPlayer->mMatrix.setPosition(5,10,0.5);
+    mPlayer->mMatrix.setPosition(5,4,0.5);
     mVisualObjects.push_back(mPlayer);
 
 

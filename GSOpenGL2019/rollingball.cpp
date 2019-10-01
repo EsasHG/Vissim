@@ -50,15 +50,6 @@ void RollingBall::calculateBarycentricCoordinates(VisualObject* plane)
         }
     }
 
-//    if(normal != currentTriangleNormal)
-//    {
-//        //v = 2*(v*n)*n
-//
-
-
-//        isFirstCollision = true;
-//    }
-
     //the formula is actually N = |G| * n * cos a
     //by taking dot(-G*n), we save time and get |G|* cos a in one swoop.
     //As gravity will always be the exact opposite direction of the xz-plane's normal vector,
@@ -85,13 +76,6 @@ void RollingBall::calculateBarycentricCoordinates(VisualObject* plane)
         else if(prevTriangleNormal== gsl::Vector3D(0))//kommer fra lufta
         {
             velocity = (gravity+N).normalized() * gsl::Vector3D::dot(velocity, (gravity+N).normalized());
-//                velocity = (gravity+N).normalized() * gsl::Vector3D::dot(velocity, (gravity+N).normalized());
-////                qDebug() << "Entering Triangle!";
-////                gsl::Vector3D tempNormal = normal + prevTriangleNormal;
-////                tempNormal.normalize();
-////                gsl::Vector3D tempVel = tempNormal*gsl::Vector3D::dot(velocity,tempNormal);
-////                tempVel= velocity - tempVel;
-////                velocity = tempVel;
         }
         else    //bytter trekant
         {
@@ -104,55 +88,10 @@ void RollingBall::calculateBarycentricCoordinates(VisualObject* plane)
         }
     }
 
-
-
-//    if(distanceToBall <= radius)
-//    {
-//        if(normal != prevTriangleNormal)
-//        {
-//            //qDebug() << "Same Normals!";
-//            if(normal == gsl::Vector3D(0)) //går til lufta
-//            {
-//                qDebug() << "Leaving Triangls!";
-//                //N = gsl::Vector3D(0);
-//            }
-//            else if(prevTriangleNormal== gsl::Vector3D(0))//kommer fra lufta
-//            {
-////                qDebug() << "Entering Triangle!";
-////                gsl::Vector3D tempNormal = normal + prevTriangleNormal;
-////                tempNormal.normalize();
-////                gsl::Vector3D tempVel = tempNormal*gsl::Vector3D::dot(velocity,tempNormal);
-////                tempVel= velocity - tempVel;
-////                velocity = tempVel;
-//            }
-//            else    //bytter trekant
-//            {
-//                qDebug() << "Swapping Triangle!";
-//                gsl::Vector3D tempNormal = normal + prevTriangleNormal;
-//                tempNormal.normalize();
-//                gsl::Vector3D tempVel = tempNormal*gsl::Vector3D::dot(velocity,tempNormal);
-//                tempVel= velocity - tempVel*2;
-//                velocity = tempVel;
-//            }
-//        }
-//        else
-//        {
-
-
-//        }
-
-//    //velocity = (gravity+N).normalized() * gsl::Vector3D::dot(velocity, (gravity+N).normalized());
-//    }
-//    else
-//    {
-//        normal = gsl::Vector3D(0);
-//        qDebug() << "No Collision";
-//        N= gsl::Vector3D(0);
-//    }
     prevTriangleNormal = normal;
 
         //LastLocation = gsl::Vector3D(mMatrix.getPosition().x,playerTempPos,mMatrix.getPosition().z);
-    qDebug() << prevTriangleNormal << normal <<  radius << distanceToBall;
+    //qDebug() << prevTriangleNormal << normal <<  radius << distanceToBall;
         //qDebug() << acceleration << velocity.normalized() << (gravity+N).normalized() << currentTriangleNormal << gsl::Vector3D::dot(gravity, currentTriangleNormal);
 
     //(1/m)* (N+G);
