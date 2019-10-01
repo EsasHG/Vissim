@@ -10,18 +10,19 @@ public:
 
     void move(VisualObject *plane);
 
-    bool CalculateBarycentricCoordinates(VisualObject *plane);
+    void calculateBarycentricCoordinates(VisualObject *plane);
     gsl::Vector3D inputVector{};
 private:
     float radius = 1.f;
     float speed = 0.0001f;
-    gsl::Vector3D Velocity{};
-    gsl::Vector3D Acceleration{};
-    gsl::Vector3D Gravity{0,-9.81f,0};
+    float mass = 1.f;
+    gsl::Vector3D velocity{};
+    gsl::Vector3D acceleration{};
+    gsl::Vector3D gravity{0,-9.81f,0};
 
-    gsl::Vector3D LastLocation{};
+    gsl::Vector3D lastLocation{};
     bool isFirstCollision = true;
-    gsl::Vector3D CurrentTriangleNormal{};
+    gsl::Vector3D prevTriangleNormal{0};
 };
 
 #endif // ROLLINGBALL_H
