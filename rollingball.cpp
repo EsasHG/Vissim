@@ -37,7 +37,6 @@ void RollingBall::calculateBarycentricCoordinates(VisualObject* plane)
         gsl::Vector2D temp = gsl::Vector2D(mMatrix.getPosition().x, mMatrix.getPosition().z);
         gsl::Vector3D bar = temp.barycentricCoordinates(gsl::Vector2D(pos1.x,pos1.z),gsl::Vector2D(pos2.x, pos2.z), gsl::Vector2D(pos3.x,pos3.z));
 
-
         if(bar.x>=0 && bar.x<=1 && bar.y>=0 && bar.y<=1 && bar.z>=0 && bar.z <=1)
         {
             isInTriangle = true;
@@ -65,7 +64,7 @@ void RollingBall::calculateBarycentricCoordinates(VisualObject* plane)
     else
     {
         float distance = radius - distanceToBall;
-        if(distance >0.2f)
+        if(distance >0.5f)
         {
 
             mMatrix.translate(normal*distance);
@@ -87,7 +86,7 @@ void RollingBall::calculateBarycentricCoordinates(VisualObject* plane)
         }
         else    //bytter trekant
         {
-            qDebug() << "Swapping Triangle!";
+            //qDebug() << "Swapping Triangle!";
             gsl::Vector3D tempNormal = normal + prevTriangleNormal;
             tempNormal.normalize();
             gsl::Vector3D tempVel = tempNormal*gsl::Vector3D::dot(velocity,tempNormal);
