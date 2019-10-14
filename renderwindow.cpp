@@ -6,6 +6,8 @@
 #include <QKeyEvent>
 #include <QStatusBar>
 #include <QDebug>
+#include <QTime>
+
 
 #include "shader.h"
 #include "mainwindow.h"
@@ -109,20 +111,24 @@ void RenderWindow::init()
 
 
     mSurface = new TriangleSurface();
+    //mSurface->readFile("D:/Programming/OpenGL/Vissim/GSOpenGL2019/2trekant2.txt");
     mSurface->readTxtFiles("D:/Programming/OpenGL/Vissim/TerrainData");
     mSurface->init();
     mVisualObjects.push_back(mSurface);
 
-
+    std::srand(std::time(nullptr));
     mPlayer = new RollingBall();
     mPlayer->init();
-    mPlayer->mMatrix.setPosition(50,150,50);
+    mPlayer->mMatrix.setPosition(5,10,5);
     mVisualObjects.push_back(mPlayer);
-    for(int i=0; i<10; i++)
+    for(int i=0; i<5; i++)
     {
         mBalls.push_back(new RollingBall());
         mBalls.back()->init();
-        mBalls.back()->mMatrix.setPosition(i*100,100,i*100);
+        float x = std::rand()%250;
+        float y = 100;
+        float z = std::rand()%250;
+        mBalls.back()->mMatrix.setPosition(x,y,z);
         mVisualObjects.push_back(mBalls.back());
     }
 
@@ -359,7 +365,7 @@ void RenderWindow::handleInput()
     if(mInput.LEFT)
         tempInput+=gsl::Vector3D(-1,0,0);
 
-    mPlayer->inputVector = tempInput.normalized();
+    //mPlayer->inputVector = tempInput.normalized();
 
 }
 

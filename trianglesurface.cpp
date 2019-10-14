@@ -368,6 +368,8 @@ void TriangleSurface::construct()
     }
 }
 
+
+//this function is not entirely accurate
 void TriangleSurface::calculateNormals()
 {
     for (unsigned int i=0; i<mIndices.size(); i+=3)
@@ -376,7 +378,7 @@ void TriangleSurface::calculateNormals()
         auto pos2 = mVertices[mIndices[i+1]].mXYZ;
         auto pos3 = mVertices[mIndices[i+2]].mXYZ;
 
-        auto normal = gsl::Vector3D::cross(pos2-pos1,pos3-pos1);
+        auto normal = gsl::Vector3D::cross(pos3-pos1,pos2-pos1);
         normal.normalize();
 
         mVertices[mIndices[i+0]].set_normal(normal);
@@ -384,9 +386,6 @@ void TriangleSurface::calculateNormals()
         mVertices[mIndices[i+2]].set_normal(normal);
 
     }
-    std::vector<gsl::Vector3D> tempNormals;
-    for (unsigned int i=0; i<mIndices.size(); i+=3)
-    {
-
-    }
 }
+
+

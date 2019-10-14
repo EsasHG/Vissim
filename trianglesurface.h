@@ -18,6 +18,7 @@ public:
     void construct();
 
     void readTxtFiles(std::string directory);
+
 private:
 
     void calculateNormals();

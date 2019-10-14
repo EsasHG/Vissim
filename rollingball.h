@@ -19,10 +19,14 @@ private:
     gsl::Vector3D velocity{};
     gsl::Vector3D acceleration{};
     gsl::Vector3D gravity{0,-9.81f,0};
+    gsl::Vector3D normal{0};
+    gsl::Vector3D playerTrianglePos{0};
+    gsl::Vector3D playerTempPos{0};
 
     gsl::Vector3D lastLocation{};
     bool isFirstCollision = true;
     gsl::Vector3D prevTriangleNormal{0};
+    void changeVelocity();
 };
 
 #endif // ROLLINGBALL_H
