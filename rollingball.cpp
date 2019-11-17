@@ -2,7 +2,6 @@
 
 RollingBall::RollingBall() : Sphere(3)
 {
-
 }
 
 void RollingBall::move(VisualObject* plane)
@@ -15,8 +14,6 @@ void RollingBall::move(VisualObject* plane)
 
 void RollingBall::calculateBarycentricCoordinates(VisualObject* plane)
 {
-    bool isInTriangle = false;
-
     for (unsigned int i=0; i<plane->mIndices.size(); i+=3)
     {
         gsl::Vector3D pos1;
@@ -31,7 +28,6 @@ void RollingBall::calculateBarycentricCoordinates(VisualObject* plane)
 
         if(bar.x>=0 && bar.x<=1 && bar.y>=0 && bar.y<=1 && bar.z>=0 && bar.z <=1)
         {
-            isInTriangle = true;
             playerTempPos = (pos1*bar.x + pos2*bar.y + pos3*bar.z);
             normal = gsl::Vector3D::cross(pos3 - pos1,pos2 - pos1);
             normal.normalize();

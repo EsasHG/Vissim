@@ -8,7 +8,6 @@
 #include <QDebug>
 #include <QTime>
 
-
 #include "shader.h"
 #include "mainwindow.h"
 #include "matrix4x4.h"
@@ -19,6 +18,8 @@
 #include "beziercurve.h"
 #include "sphere.h"
 #include "rollingball.h"
+#include "bsplinecurve.h"
+#include "npc.h"
 
 RenderWindow::RenderWindow(const QSurfaceFormat &format, MainWindow *mainWindow)
     : mContext(nullptr), mInitialized(false), mMainWindow(mainWindow)
@@ -45,6 +46,21 @@ RenderWindow::~RenderWindow()
 }
 
 /// Sets up the general OpenGL stuff and the buffers needed to render a triangle
+void RenderWindow::makeItems(int numOfItems, int max, float min)
+{
+    mItems.clear();
+    for(int i=0; i<numOfItems; i++)
+    {
+        auto temp = new TriangleSurface();
+        auto tempV = temp->readOBJFile("D:/Programming/OpenGL/Vissim/GSOpenGL2019/Assets/cube.obj");
+        temp->mVertices = tempV.first;
+        temp->mIndices = tempV.second;
+        mItems.push_back(temp);
+        mItems.back()->mMatrix.translate({(rand()%max + min), 100, (rand()%max + min)});
+        mItems.back()->init();
+    }
+}
+
 void RenderWindow::init()
 {
     //Connect the gameloop timer to the render function:
@@ -104,37 +120,49 @@ void RenderWindow::init()
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, mTexture[1]->id());
 
-    VisualObject *temp = new XYZ();
-    temp->init();
-    mVisualObjects.push_back(temp);
 
-
-
+    //Makes surface
     mSurface = new TriangleSurface();
-    //mSurface->readFile("D:/Programming/OpenGL/Vissim/GSOpenGL2019/2trekant2.txt");
     mSurface->readTxtFiles("D:/Programming/OpenGL/Vissim/TerrainData");
-    mSurface->init();
     mVisualObjects.push_back(mSurface);
 
+    //makes player
     std::srand(std::time(nullptr));
-    mPlayer = new RollingBall();
-    mPlayer->init();
-    mPlayer->mMatrix.setPosition(5,10,5);
+    mPlayer = new Sphere(2);
     mVisualObjects.push_back(mPlayer);
-    for(int i=0; i<5; i++)
-    {
-        mBalls.push_back(new RollingBall());
-        mBalls.back()->init();
-        float x = std::rand()%250;
-        float y = 100;
-        float z = std::rand()%250;
-        mBalls.back()->mMatrix.setPosition(x,y,z);
-        mVisualObjects.push_back(mBalls.back());
-    }
+
+    //setting up items with random positions
+    int max = 150;
+    float min = 100;
+
+    makeItems(5, max, min);
+
+    npc = new NPC(mItems, {min/2,100,(max+min)/2}, {max + min/2,100,(max+min)/2});
+    mVisualObjects.push_back(npc);
+    mVisualObjects.push_back(npc->bSplineCurve);
+    mPlayerStartPosition = gsl::Vector3D((min+max)/2, 100, min);
 
     //********************** Set up camera **********************
     mCurrentCamera = new Camera();
-    mCurrentCamera->setPosition(gsl::Vector3D(-1.f, -100.f, 4.f));
+    mCurrentCamera->setPosition(gsl::Vector3D(-(max+min)/2, -(max+min), -(max+min)/2));
+    mCurrentCamera->pitch(90);
+
+    mPlayer->mMatrix.setPosition(mPlayerStartPosition);
+
+    float scale = 1.f;
+    mPlayer->mMatrix.scale({scale,scale,scale});
+    npc->mMatrix.scale({scale,scale,scale});
+    for(auto& VO : mVisualObjects)
+    {
+        VO->init();
+    }
+    for(auto& i : mItems)
+    {
+        //moves item down to surface
+        i->mMatrix.setPosition(CalculateBarycentricCoordinates(mSurface,i));
+        i->mMatrix.scale({scale,scale,scale});
+        i->init();
+    }
 }
 
 
@@ -144,18 +172,53 @@ void RenderWindow::render()
     handleInput();
 
     mCurrentCamera->update();
+    npc->update();
 
-    static_cast<RollingBall*>(mPlayer)->move(mSurface);
+    //static_cast<RollingBall*>(mPlayer)->move(mSurface);
     for (auto& ball : mBalls)
         ball->move(mSurface);
 
     mTimeStart.restart(); //restart FPS clock
     mContext->makeCurrent(this); //must be called every frame (every time mContext->swapBuffers is called)
 
+    mPlayer->mMatrix.setPosition(CalculateBarycentricCoordinates(mSurface,mPlayer));
+    npc->mMatrix.setPosition(CalculateBarycentricCoordinates(mSurface,npc));
+
+    //collisions
+    if(mPlayer && npc && (npc->mMatrix.getPosition() - mPlayer->mMatrix.getPosition()).length() < 2)
+    {
+        mPlayer->mMatrix.setPosition(mPlayerStartPosition);
+        qDebug() << "Player and npc collided!";
+    }
+
+    int itemToDelete = -1;
+    for (int i=0; i<mItems.size(); i++)
+    {
+        if(mItems[i] && (mItems[i]->mMatrix.getPosition() - mPlayer->mMatrix.getPosition()).length() < 2)
+            itemToDelete = i;
+    }
+    if(itemToDelete>=0)
+    {
+        auto temp = mItems[itemToDelete];
+        mItems[itemToDelete] = nullptr;
+        npc->mItems[itemToDelete] = nullptr;
+
+        delete temp;
+    }
+
+    auto tempItems = mItems;
+    mItems.clear();
+    for (auto& i : tempItems)
+    {
+        if(i)
+            mItems.push_back(i);
+    }
+
     //to clear the screen for each redraw
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
+    glFrontFace(GL_CCW);
     for(auto& object : mVisualObjects)
     {
         glUseProgram(mShaderProgram[0]->getProgram());
@@ -163,6 +226,18 @@ void RenderWindow::render()
         glUniformMatrix4fv( pMatrixUniform0, 1, GL_TRUE, mCurrentCamera->mProjectionMatrix.constData());
         glUniformMatrix4fv( mMatrixUniform0, 1, GL_TRUE, object->mMatrix.constData());
         object->draw();
+    }
+    glFrontFace(GL_CW);
+    for(auto& object : mItems)
+    {
+        if(object)
+        {
+            glUseProgram(mShaderProgram[0]->getProgram());
+            glUniformMatrix4fv( vMatrixUniform0, 1, GL_TRUE, mCurrentCamera->mViewMatrix.constData());
+            glUniformMatrix4fv( pMatrixUniform0, 1, GL_TRUE, mCurrentCamera->mProjectionMatrix.constData());
+            glUniformMatrix4fv( mMatrixUniform0, 1, GL_TRUE, object->mMatrix.constData());
+            object->draw();
+        }
     }
 
     calculateFramerate();
@@ -354,18 +429,18 @@ void RenderWindow::handleInput()
 
     // ********************** Oppgave 3 *******************
 
-    float PlayerSpeed = 0.05f;
+    float PlayerSpeed = 1.5f;
     gsl::Vector3D tempInput{0};
     if(mInput.UP)
-        tempInput+=gsl::Vector3D(0,0,1);
+        tempInput+=gsl::Vector3D(0,0,PlayerSpeed);
     if(mInput.DOWN)
-        tempInput+=gsl::Vector3D(0,0,-1);
+        tempInput+=gsl::Vector3D(0,0,-PlayerSpeed);
     if(mInput.RIGHT)
-        tempInput+=gsl::Vector3D(1,0,0);
+        tempInput+=gsl::Vector3D(PlayerSpeed,0,0);
     if(mInput.LEFT)
-        tempInput+=gsl::Vector3D(-1,0,0);
-
-    //mPlayer->inputVector = tempInput.normalized();
+        tempInput+=gsl::Vector3D(-PlayerSpeed,0,0);
+    if(mPlayer)
+        mPlayer->mMatrix.translate(tempInput);
 
 }
 

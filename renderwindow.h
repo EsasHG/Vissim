@@ -16,6 +16,10 @@ class BezierCurve;
 class QOpenGLContext;
 class Shader;
 class MainWindow;
+class Sphere;
+class TriangleSurface;
+class RollingBall;
+class NPC;
 
 /// This inherits from QWindow to get access to the Qt functionality and
 /// OpenGL surface.
@@ -40,8 +44,10 @@ private slots:
 
 private:
 
-    class TriangleSurface* mSurface;
-    class RollingBall* mPlayer;
+    TriangleSurface* mSurface = nullptr;
+    Sphere* mPlayer = nullptr;
+
+    NPC* npc = nullptr;
 
     void init();
     void setCameraSpeed(float value);
@@ -75,6 +81,8 @@ private:
     int mMouseXlast{0};
     int mMouseYlast{0};
 
+    std::vector<TriangleSurface*> mItems;
+
     QTimer *mRenderTimer{nullptr};  //timer that drives the gameloop
     QElapsedTimer mTimeStart;       //time variable that reads the actual FPS
 
@@ -92,7 +100,10 @@ private:
 
     gsl::Vector3D CalculateBarycentricCoordinates(VisualObject *plane, VisualObject *object);
     gsl::Vector3D LastPlayerSurfacePosition = {};
+    gsl::Vector3D mPlayerStartPosition{5,0,5};
 
+
+    void makeItems(int numOfItems = 3, int max = 150, float min = 100);
 
 protected:
     //The QWindow that we inherit from has these functions to capture

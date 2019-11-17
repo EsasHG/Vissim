@@ -67,12 +67,12 @@ namespace gsl
 
     bool Vector3D::operator==(const Vector3D &rhs)
     {
-        return (x==rhs.x && y==rhs.y && z==rhs.z);
+        return (x==rhs.x && y==rhs.y && z==rhs.z); //TODO fix this
     }
 
     bool Vector3D::operator!=(const Vector3D &rhs)
     {
-        return (x!=rhs.x || y!=rhs.y || z!=rhs.z);
+        return (x!=rhs.x || y!=rhs.y || z!=rhs.z); //TODO fix this
     }
 
 

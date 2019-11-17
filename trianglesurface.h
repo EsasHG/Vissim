@@ -19,6 +19,7 @@ public:
 
     void readTxtFiles(std::string directory);
 
+    std::pair<std::vector<Vertex>, std::vector<unsigned int> > readOBJFile(std::string filename);
 private:
 
     void calculateNormals();
