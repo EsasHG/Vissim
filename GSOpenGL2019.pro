@@ -16,7 +16,6 @@ SOURCES += main.cpp \
     GSL/vector4d.cpp \
     GSL/gsl_math.cpp \
     bsplinecurve.cpp \
-    npc.cpp \
     renderwindow.cpp \
     rollingball.cpp \
     shader.cpp \
@@ -42,7 +41,6 @@ HEADERS += \
     GSL/gsl_math.h \
     GSL/math_constants.h \
     bsplinecurve.h \
-    npc.h \
     renderwindow.h \
     rollingball.h \
     shader.h \

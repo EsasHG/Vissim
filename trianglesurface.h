@@ -3,6 +3,7 @@
 
 #include "visualobject.h"
 
+class Triangle;
 class TriangleSurface : public VisualObject
 {
 public:
@@ -20,6 +21,10 @@ public:
     void readTxtFiles(std::string directory);
 
     std::pair<std::vector<Vertex>, std::vector<unsigned int> > readOBJFile(std::string filename);
+
+    void readExamFile(std::string filename);
+    void makeNormals();
+    void generateTriangles();
 private:
 
     void calculateNormals();
@@ -30,11 +35,20 @@ private:
     float mDiffY;
     float mDiffZ;
 
-    const int mTilesX = 100;
-    const int mTilesZ = 100;
+    float xMin = 614775.0f;
+    float xMax = 614800.0f;
+    float yMin = 6758580.0f;
+    float yMax = 6758605.0f;
+
+    const int mTilesX = 4;
+    const int mTilesY = 4;
 
     const std::string terrainFileName = "terrainData.txt";
     void calculateIndices();
+
+    std::vector<Triangle> mTriangles;
+    std::vector<Vertex> mNodes;
+    std::vector<Vertex> container;
 };
 
 #endif //TRIANGLESURFACE_H

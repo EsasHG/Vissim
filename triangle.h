@@ -5,19 +5,18 @@
 #include <vector>
 #include <matrix4x4.h>
 
-class Triangle :  protected QOpenGLFunctions_4_1_Core
+class Triangle
 {
 public:
-    Triangle();
+    Triangle() {}
+    Triangle(unsigned in1, unsigned in2, unsigned in3);
 
-    void draw();
-    void init(GLuint shader);
 
-private:
-    GLuint mVAO{0};
-    GLuint mVBO{0};
-    GLint  mMatrixUniform{0};
-    gsl::Matrix4x4 mMatrix;
+    friend std::ostream& operator<< (std::ostream&, const Triangle&);
+
+    unsigned v1;
+    unsigned v2;
+    unsigned v3;
 };
 
 #endif // TRIANGLE_H

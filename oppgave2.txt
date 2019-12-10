@@ -1,0 +1,13 @@
+For å lage en regulær triangulering av punktene ville jeg først funnet avstanden mellom grensene i x og y, og så delt opp avstanden mellom dem i like store deler.
+Jeg ville delt dem opp i en del mer enn jeg vil ha ruter, fordi grensene vil da tilsvare vertexposisjonene. I dette eksempelet skal det være 32 triangler. 
+Med to triangler i hver rute vil det bli 16 ruter. Da blir det 4 på hver rad.
+Med disse rutene definert, kan vi gå gjennom punktene og se hvem som er innenfor hver rute. Vi kan da tenke oss at punktene innenfor en rute vil gjøre om til den nedeste vertexen for ruten.
+Vi kan ta gjennomsnittet av høyden dems for å finne den mest nøyaktige verdien. 
+
+Om en rute ikke har noen punkter, kan vi ta gjennomsnittet av rutene rundt for å finne en tilnærmet verdi for dette punktet.
+
+Ved å flytte punktene til det laveste hjørnet av rten, vil da ikke rutene gå hel til xMax, men stoppe en rutes lengde før. 
+Dette er i min mening ikke så farlig, ettersom det hadde være veldig komplisert å rutene til å gå nøyaktig fra xmin til xmax. 
+Hadde vi satt dem til å være i midten av ruten ville den ikke vært på noen av dem. 
+
+Se vedlagt ark for skisse.

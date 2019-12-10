@@ -4,8 +4,7 @@ void BSplineCurve::generateKnots()
 {
     mKnots.clear();
     int numKnots = d + static_cast<int>(mControlPoints.size()) + 1;
-//    if(diff>0)
-//        numKnots+=diff;
+
     const int interpolateNum = numKnots - ((d+1)*2);
 
     for(int i = 0; i < numKnots; ++i)
@@ -75,7 +74,7 @@ int BSplineCurve::findKnotInterval(float x)
 
 void BSplineCurve::draw()
 {
-
+    //qDebug() << "Drawing Curve!";
     glBindVertexArray(mVAO);
     //glLineWidth(10.f);
     glDrawArrays(GL_LINE_STRIP,0,static_cast<GLint>(mVertices.size()));

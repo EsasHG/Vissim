@@ -9,64 +9,22 @@
 #include <fstream>
 #include <string>
 
-TriangleSurface::TriangleSurface() : VisualObject() {
-    //    int Offset = 2 ;
-    //    int m_Height = 3;
-    //    int m_Width = 3;
-    //    for (float z = -3; z < m_Width; z+=Offset)
-    //    {
-    //        for (float x = -4; x < m_Height; x+= Offset)
-    //        {
-    //            mVertices.push_back({x,0,z,0,1,0});
-    //            mVertices.push_back({x+Offset,0,z,0,1,0});
-    //            mVertices.push_back({x+Offset,0,z+Offset,0,1,0});
+#include "triangle.h"
 
-    //            mVertices.push_back({x,0,z,0,1,0});
-    //            mVertices.push_back({x+Offset,0,z+Offset,0,1,0});
-    //            mVertices.push_back({x,0,z+Offset,0,1,0});
-    //        }
-    //    }
-
-//    mVertices.push_back({0,0,0,0,1,0});
-//    mVertices.push_back({10,5,0,0,1,0});
-//    mVertices.push_back({10,0,10,0,1,0});
-
-//    mVertices.push_back({10,0,10,1,0,0});
-//    mVertices.push_back({0,5,10,1,0,0});
-//    mVertices.push_back({0,0,0,1,0,0});
-
-//    //trekant 1
-//    auto pos1 = mVertices[0].mXYZ;
-//    auto pos2 = mVertices[1].mXYZ;
-//    auto pos3 = mVertices[2].mXYZ;
-
-//    auto normal = gsl::Vector3D::cross(pos2-pos1,pos3-pos1);
-//    normal.normalize();
-
-//    mVertices[0].set_normal(normal);
-//    mVertices[1].set_normal(normal);
-//    mVertices[2].set_normal(normal);
-
-
-//    pos1 = mVertices[3].mXYZ;
-//    pos2 = mVertices[4].mXYZ;
-//    pos3 = mVertices[5].mXYZ;
-
-//    normal = gsl::Vector3D::cross(pos2-pos1,pos3-pos1);
-//    normal.normalize();
-
-//    mVertices[3].set_normal(normal);
-//    mVertices[4].set_normal(normal);
-//    mVertices[5].set_normal(normal);
+TriangleSurface::TriangleSurface() : VisualObject()
+{
 
     mMatrix.setToIdentity();
 }
 
 TriangleSurface::TriangleSurface(std::string filename) : VisualObject()
 {
-    readFile(filename);
-    calculateNormals();
     mMatrix.setToIdentity();
+    readExamFile(filename);
+    triangulate();
+    makeNormals();
+
+    writeFile("oppgave5Save.txt");
 }
 
 TriangleSurface::~TriangleSurface()
@@ -127,6 +85,41 @@ void TriangleSurface::draw()
         glDrawArrays(GL_POINTS, 0, mVertices.size());
 
     }
+
+}
+
+void TriangleSurface::readExamFile(std::string filename)
+{
+    std::ifstream inn;
+    inn.open(filename.c_str());
+
+    if (inn.is_open())
+    {
+        unsigned long n;
+        Vertex vertex;
+
+        inn >> n;
+        //mVertices.reserve(n);
+        for (unsigned int i=0; i<n; i++)
+        {
+            inn >> vertex;
+            if(xMin <= vertex.mXYZ.x && vertex.mXYZ.x <= xMax && yMin <= vertex.mXYZ.y  && vertex.mXYZ.y <=yMax)
+            {
+//                vertex.mXYZ.x-=xMin;
+//                vertex.mXYZ.y-=yMin;
+                container.push_back(vertex);
+            }
+        }
+
+        inn.close();
+    }
+    else
+    {
+        qDebug() << "Error: " << filename.c_str() << " could not be opened!";
+    }
+
+    mDiffX = xMax - xMin;
+    mDiffY = yMax - yMin;
 }
 
 void TriangleSurface::readFile(std::string filename) {
@@ -139,11 +132,13 @@ void TriangleSurface::readFile(std::string filename) {
         Vertex vertex;
 
         inn >> n;
-        mVertices.reserve(n);
+        //mVertices.reserve(n);
         for (unsigned int i=0; i<n; i++)
         {
             inn >> vertex;
-            mVertices.push_back(vertex);
+            if(614775.0f <= vertex.mXYZ.x && vertex.mXYZ.x <= 614800.0f &&
+                    6758580.0f <= vertex.mXYZ.y  && vertex.mXYZ.y <=6758605.0f)
+            container.push_back(vertex);
         }
         inn >> n;
         for(unsigned int i = 0; i < n; ++i)
@@ -164,6 +159,7 @@ void TriangleSurface::readFile(std::string filename) {
     {
         qDebug() << "Error: " << filename.c_str() << " could not be opened!";
     }
+
 }
 
 
@@ -284,91 +280,122 @@ void TriangleSurface::writeFile(std::string filename)
             vertex = *it;
             ut << vertex << std::endl;
         }
+        n = mTriangles.size();
+        ut << n << std::endl;
+        for (auto t : mTriangles)
+        {
+            ut << t << std::endl;
+        }
+
         ut.close();
     }
 }
 
 void TriangleSurface::triangulate()
 {
-    const float tileXsize = mDiffX/(float)mTilesX;
-    const float tileZsize = mDiffZ/(float)mTilesZ;
-    std::vector<Vertex> tempVertices;
+    const float tileXsize = mDiffX/(float)(mTilesX+1);
+    const float tileZsize = mDiffY/(float)(mTilesY+1);
+    std::vector<Vertex> nodes;
 
-    for(float i = 0; i < mTilesX; i+=1.f)
+    for(float i = 0; i < (mTilesX+1); i+=1.f)
     {
-        for(float j = 0; j < mTilesZ; j+=1.f)
+        for(float j = 0; j < (mTilesY+1); j+=1.f)
         {
-            Vertex tempVertex(-1,0,-1);
+            Vertex tempVertex(-1,-1,-1);
             int numOfVertices(0);
 
-            float tileXStart = tileXsize*(i);
-            float tileZStart = tileZsize*(j);
-            float nextTileXStart = tileXsize*(i+1.f);
-            float nextTileZStart = tileZsize*(j+1.f);
+            float tileXStart = xMin + tileXsize*(i);
+            float tileZStart = yMin + tileZsize*(j);
+            float nextTileXStart = xMin + tileXsize*(i+1.f);
+            float nextTileZStart = yMin + tileZsize*(j+1.f);
 
-            for(auto v : mVertices)
+            for(auto v : container)
             {
                 if(v.mXYZ.x >= tileXStart && v.mXYZ.x < nextTileXStart &&
-                   v.mXYZ.z >= tileZStart && v.mXYZ.z < nextTileZStart)
+                   v.mXYZ.y >= tileZStart && v.mXYZ.y < nextTileZStart)
                 {
-                    tempVertex.mXYZ.y+=v.mXYZ.y;
+                    tempVertex.mXYZ.z+=v.mXYZ.z;
                     numOfVertices++;
                 }
             }
             if(numOfVertices != 0)
             {
-                tempVertex.mXYZ.y = tempVertex.mXYZ.y/(float)numOfVertices;
+                tempVertex.mXYZ.z = tempVertex.mXYZ.z/(float)numOfVertices;
             }
 
-            tempVertex.mXYZ.x = tileXStart/* + ((float)tileXsize/2.f)*/;
-            tempVertex.mXYZ.z = tileZStart/* + ((float)tileZsize/2.f)*/;
+            tempVertex.mXYZ.x = tileXStart;
+            tempVertex.mXYZ.y = tileZStart;
 
-            tempVertices.push_back(tempVertex);
+            nodes.push_back(tempVertex);
         }
     }
 
-    mVertices = tempVertices;
-    writeFile(terrainFileName);
+    for(int i=0; i<nodes.size(); i++)
+    {
+        if(nodes[i].mXYZ.z ==-1) //ble ikke tildelt noen verdi)
+        {
+            float avgZ = 0;
+            float num = 0;
+            if(i-(mTilesX+1) >= 0 )
+            {
+                num++;
+                avgZ += nodes[i-(mTilesX+1)].mXYZ.z;
+            }
+            if(i+(mTilesX+1) < nodes.size() )
+            {
+                num++;
+                avgZ += nodes[i+(mTilesX+1)].mXYZ.z;
+            }
+
+            if(i-1 >= 0 )
+            {
+                num++;
+                avgZ += nodes[i-1].mXYZ.z;
+            }
+            if(i+1 < nodes.size() )
+            {
+                num++;
+                avgZ += nodes[i+1].mXYZ.z;
+            }
+            nodes[i].mXYZ.z = avgZ/num;
+
+
+
+        }
+    }
+
+
+    mVertices = nodes;
+    calculateIndices();
+    generateTriangles();
+    //writeFile(terrainFileName);
+}
+
+void TriangleSurface::generateTriangles()
+{
+    for(unsigned i=0; i<mIndices.size(); i+=3)
+    {
+        mTriangles.push_back(Triangle(mIndices[i], mIndices[i+1], mIndices[i+2]));
+    }
+
 }
 
 void TriangleSurface::calculateIndices()
 {
     mIndices.clear();
-    for(int i = 0; i < mTilesZ*mTilesX; ++i)
+
+    for(int i = 0; i < (mTilesY+1)*(mTilesX+1); ++i)
     {
-        if(i == (mTilesX*mTilesZ)-mTilesZ) break;
-        if(i > 1 && (i+1) % mTilesX == 0)  continue;
+        if(i == ((mTilesX+1)*(mTilesY+1))-(mTilesY+1)) break;
+        if(i > 1 && (i+1) % (mTilesX+1) == 0)  continue;
 
         mIndices.emplace_back(i);
-        mIndices.emplace_back(i+mTilesZ+1);
+        mIndices.emplace_back(i+(mTilesY+1)+1);
         mIndices.emplace_back(i+1);
 
         mIndices.emplace_back(i);
-        mIndices.emplace_back(i+mTilesZ);
-        mIndices.emplace_back(i+mTilesZ+1);
-    }
-}
-
-
-void TriangleSurface::construct()
-{
-    float xmin=0.0f, xmax=1.0f, ymin=0.0f, ymax=1.0f, h=0.25f;
-    for (auto x=xmin; x<xmax; x+=h)
-    {
-        for (auto y=ymin; y<ymax; y+=h)
-        {
-            float z = sin(gsl::PI*x)*sin(gsl::PI*y);
-            mVertices.push_back(Vertex{x,y,z,x,y,z});
-            z = sin(gsl::PI*(x+h))*sin(gsl::PI*y);
-            mVertices.push_back(Vertex{x+h,y,z,x,y,z});
-            z = sin(gsl::PI*x)*sin(gsl::PI*(y+h));
-            mVertices.push_back(Vertex{x,y+h,z,x,y,z});
-            mVertices.push_back(Vertex{x,y+h,z,x,y,z});
-            z = sin(gsl::PI*(x+h))*sin(gsl::PI*y);
-            mVertices.push_back(Vertex{x+h,y,z,x,y,z});
-            z = sin(gsl::PI*(x+h))*sin(gsl::PI*(y+h));
-            mVertices.push_back(Vertex{x+h,y+h,z,x,y,z});
-        }
+        mIndices.emplace_back(i+(mTilesY+1));
+        mIndices.emplace_back(i+(mTilesY+1)+1);
     }
 }
 
@@ -392,158 +419,81 @@ void TriangleSurface::calculateNormals()
     }
 }
 
-std::pair<std::vector<Vertex>, std::vector<unsigned int>> TriangleSurface::readOBJFile(std::string filename)
+void TriangleSurface::makeNormals()
 {
-    std::pair<std::vector<Vertex>, std::vector<unsigned int>> vertPair;
 
-    //Open File
-    std::string fileWithPath = filename;
-    std::ifstream fileIn;
-    fileIn.open (fileWithPath, std::ifstream::in);
-    if(!fileIn)
-        qDebug() << "Could not open file for reading: " << QString::fromStdString(filename);
-
-    //One line at a time-variable
-    std::string oneLine;
-    //One word at a time-variable
-    std::string oneWord;
-
-    std::vector<gsl::Vector3D> tempVertecies;
-    std::vector<gsl::Vector3D> tempNormals;
-    std::vector<gsl::Vector2D> tempUVs;
-
-    //    std::vector<Vertex> mVertices;    //made in VisualObject
-    //    std::vector<GLushort> mIndices;   //made in VisualObject
-
-    // Varible for constructing the indices vector
-    unsigned int temp_index = 0;
-
-    //Reading one line at a time from file to oneLine
-    while(std::getline(fileIn, oneLine))
+    for (int i=0;i<mVertices.size(); i++)
     {
-        //Doing a trick to get one word at a time
-        std::stringstream sStream;
-        //Pushing line into stream
-        sStream << oneLine;
-        //Streaming one word out of line
-        oneWord = ""; //resetting the value or else the last value might survive!
-        sStream >> oneWord;
-
-        if (oneWord == "#")
+        gsl::Vector3D normal = gsl::Vector3D(0,0,0);
+        gsl::Vector3D p1 = mVertices[i].mXYZ;
+        gsl::Vector3D p2, p3;
+        //trekant 1
+        if(((i%(mTilesX+1))-1)>=0 && i >= (mTilesX+1))
         {
-            //Ignore this line
-            //            qDebug() << "Line is comment "  << QString::fromStdString(oneWord);
-            continue;
+            p2 = mVertices[i-1].mXYZ - p1 ;
+            p3 = mVertices[i-(mTilesX+1)].mXYZ -p1;
+            normal+= p2^p3;
         }
-        if (oneWord == "")
+        else
         {
-            //Ignore this line
-            //            qDebug() << "Line is blank ";
-            continue;
+            normal += gsl::Vector3D(0,0,1);
         }
-        if (oneWord == "v")
+        //trekant 2
+        if(((i%(mTilesX+1))-1)>=0 && i >= (mTilesX+1))
         {
-            //            qDebug() << "Line is vertex "  << QString::fromStdString(oneWord) << " ";
-            gsl::Vector3D tempVertex;
-            sStream >> oneWord;
-            tempVertex.x = std::stof(oneWord);
-            sStream >> oneWord;
-            tempVertex.y = std::stof(oneWord);
-            sStream >> oneWord;
-            tempVertex.z = std::stof(oneWord);
-
-            //Vertex made - pushing it into vertex-vector
-            tempVertecies.push_back(tempVertex);
-
-            continue;
+            p2 = mVertices[i-(mTilesX+1)].mXYZ -p1;
+            p3 = mVertices[i-(mTilesX+1)+1].mXYZ -p1;
+            normal+= p2^p3;
         }
-        if (oneWord == "vt")
+        else
         {
-            //            qDebug() << "Line is UV-coordinate "  << QString::fromStdString(oneWord) << " ";
-            gsl::Vector2D tempUV;
-            sStream >> oneWord;
-            tempUV.x = std::stof(oneWord);
-            sStream >> oneWord;
-            tempUV.y = std::stof(oneWord);
-
-            //UV made - pushing it into UV-vector
-            tempUVs.push_back(tempUV);
-
-            continue;
+            normal += gsl::Vector3D(0,0,1);
         }
-        if (oneWord == "vn")
+        //trekant 3
+        if(((i%(mTilesX+1))+1)<(mTilesX+1) && i >= (mTilesX+1))
         {
-            //            qDebug() << "Line is normal "  << QString::fromStdString(oneWord) << " ";
-            gsl::Vector3D tempNormal;
-            sStream >> oneWord;
-            tempNormal.x = std::stof(oneWord);
-            sStream >> oneWord;
-            tempNormal.y = std::stof(oneWord);
-            sStream >> oneWord;
-            tempNormal.z = std::stof(oneWord);
-
-            //Vertex made - pushing it into vertex- vector
-            tempNormals.push_back(tempNormal);
-            continue;
+            p2 = mVertices[i-(mTilesX+1)+1].mXYZ -p1;
+            p3 = mVertices[i+1].mXYZ -p1;
+            normal+= p2^p3;
         }
-        if (oneWord == "f")
+        else
         {
-            //            qDebug() << "Line is a face "  << QString::fromStdString(oneWord) << " ";
-            //int slash; //used to get the / from the v/t/n - format
-            int index, normal, uv;
-            for(int i = 0; i < 3; i++)
-            {
-                sStream >> oneWord;     //one word read
-                std::stringstream tempWord(oneWord);    //to use getline on this one word
-                std::string segment;    //the numbers in the f-line
-                std::vector<std::string> segmentArray;  //temp array of the numbers
-                while(std::getline(tempWord, segment, '/')) //splitting word in segments
-                {
-                    segmentArray.push_back(segment);
-                }
-                index = std::stoi(segmentArray[0]);     //first is vertex
-                if (segmentArray[1] != "")              //second is uv
-                    uv = std::stoi(segmentArray[1]);
-                else
-                {
-                    //qDebug() << "No uvs in mesh";       //uv not present
-                    uv = 0;                             //this will become -1 in a couple of lines
-                }
-                normal = std::stoi(segmentArray[2]);    //third is normal
-
-                //Fixing the indexes
-                //because obj f-lines starts with 1, not 0
-                --index;
-                --uv;
-                --normal;
-
-                if (uv > -1)    //uv present!
-                {
-                    Vertex tempVert(tempVertecies[index], tempNormals[normal], tempUVs[uv]);
-                    vertPair.first.push_back(tempVert);
-                }
-                else            //no uv in mesh data, use 0, 0 as uv
-                {
-                    Vertex tempVert(tempVertecies[index], tempNormals[normal], gsl::Vector2D(0.0f, 0.0f));
-                    vertPair.first.push_back(tempVert);
-                }
-                vertPair.second.push_back(temp_index++);
-            }
-
-            //For some reason the winding order is backwards so fixing this by swapping the last two indices
-            //Update: this was because the matrix library was wrong - now it is corrected so this is no longer needed.
-//            unsigned int back = mIndices.size() - 1;
-//            std::swap(mIndices.at(back), mIndices.at(back-1));
-            continue;
+            normal += gsl::Vector3D(0,0,1);
         }
+        //trekant 4
+        if(((i%(mTilesX+1))+1)<(mTilesX+1)&& i <mVertices.size()-(mTilesX+1))
+        {
+            p2 = mVertices[i+1].mXYZ -p1;
+            p3 = mVertices[i+(mTilesX+1)].mXYZ -p1;
+            normal+= p2^p3;
+        }
+        else
+        {
+            normal += gsl::Vector3D(0,0,1);
+        }
+        //trekant 5
+        if(((i%(mTilesX+1))+1)<(mTilesX+1)&& i < mVertices.size()-(mTilesX+1))
+        {
+            p2 = mVertices[i+(mTilesX+1)].mXYZ -p1;
+            p3 = mVertices[i+(mTilesX+1)-1].mXYZ -p1;
+            normal+= p2^p3;
+        }
+        else
+        {
+            normal += gsl::Vector3D(0,0,1);
+        }
+        //trekant 6
+        if(((i%(mTilesX+1))-1)<(mTilesX+1) && i < mVertices.size()-(mTilesX+1))
+        {
+            p2 = mVertices[i+(mTilesX+1)-1].mXYZ -p1;
+            p3 = mVertices[i-1].mXYZ -p1;
+            normal+= p2^p3;
+        }
+        else
+        {
+            normal += gsl::Vector3D(0,0,1);
+        }
+        normal.normalize();
+        mVertices[i].set_normal(normal.x,normal.y,normal.z);
     }
-
-    //beeing a nice boy and closing the file after use
-    fileIn.close();
-    qDebug() << "Obj file read: " << QString::fromStdString(filename);
-
-    return vertPair;
-
 }
-
-

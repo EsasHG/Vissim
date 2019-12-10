@@ -1,0 +1,21 @@
+antall 	skjøter (knots) er lik antall punkter + graden + 1
+Det er 6 punkter
+a):
+Grad: 2
+6 + 2 + 1 = 9.
+9 knots når den er kvadratisk
+{0,0,0,1/4, 2/4, 3/4,1,1,1}
+
+b):
+Grad: 3
+6 + 3 + 1 = 10.
+10 knots når den er kubisk
+{0,0,0,0,1/3,2/3,1,1,1,1}
+
+c)
+Ved å bruke deBoors algoritme kan vi finne ut hvor vi er på splinen, basert på en verdi t, mellom 0 og 1.
+Ved å la t gå fra 0 til 1 og tilbake med en hastighet, kan vi da få en posisjonsverdi som alltid er på splinen, men som hele tiden beveger seg.
+Vi kan få t til å gå frem og tilbake ved å plusse på med hastigheten hver frame, og begynne å trekke fra i stedet når vi ser at t>=1.
+Vi kan flytte et objekt til denne posisjonen hver frame, og da vil den naturlig følge etter splinen. 
+Vil vi ha dette objektet ned på planet, kan vi etter å ha flyttet den til splinen bruke barysentriske koordinater til å sette høyden dens. 
+Gjør vi disse tingene hver frame vil vi få et objekt som flytter seg naturlig over et terreng, samtidig som den følger etter splinen i xy-planet.
